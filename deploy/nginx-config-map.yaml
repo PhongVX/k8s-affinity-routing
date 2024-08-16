@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  default.conf: |
+    upstream default-sample-app {
+      server sample-service-0.sample-service.default.svc.cluster.local:9000 max_fails=0;
+      server sample-service-1.sample-service.default.svc.cluster.local:9000 max_fails=0; 
+      server sample-service-2.sample-service.default.svc.cluster.local:9000 max_fails=0; 
+    }
+
+    upstream sample-app {
+      hash $affinity_key consistent;
+      server sample-service-0.sample-service.default.svc.cluster.local:9000 max_fails=1 fail_timeout=2s;
+      server sample-service-1.sample-service.default.svc.cluster.local:9000 max_fails=1 fail_timeout=2s;
+      server sample-service-2.sample-service.default.svc.cluster.local:9000 max_fails=1 fail_timeout=2s;
+    }
+
+    server {
+      listen 80;
+
+      location /health-check {
+          proxy_pass http://default-sample-app;
+      }
+
+      location ~ "^/(w)/([^/]+)"  {
+          # Extract routing prefix from the URL (gives eg. 'w:00')
+          set $affinity_key $1:$2;
+
+          proxy_pass http://sample-app;
+          proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+          proxy_next_upstream_tries 2;  # Retry up to 3 times before considering it a failure
+      }
+
+    }
