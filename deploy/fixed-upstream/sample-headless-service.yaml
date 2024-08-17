@@ -11,11 +11,3 @@ spec:
       name: '9000'
       port: 9000
       targetPort: 9000 
-    - protocol: TCP
-      name: '9001'
-      port: 9001
-      targetPort: 9000 
-    - protocol: TCP
-      name: '9002'
-      port: 9002
-      targetPort: 9000 
